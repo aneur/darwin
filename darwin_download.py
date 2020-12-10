@@ -11,7 +11,7 @@ import re
 import json
 import codecs
 import argparse
-import urllib2
+import urllib3
 import subprocess
 
 from slugify import slugify
@@ -22,17 +22,19 @@ from mutagen.id3 import TALB
 from mutagen.id3 import TDRC
 from os.path import isfile
 
-sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
+
 
 #####################################################################
 
 
 def download_file(url, filename):
-    u = urllib2.urlopen(url)
+#    u = urllib3.urlopen(url)
+    http = urllib3.PoolManager()
+    u = http.request('GET', url, preload_content=False)
     f = open(filename.encode('utf-8'), 'wb')
     meta = u.info()
-    file_size = int(meta.getheaders('Content-Length')[0])
-    print u'\rTéléchargement de %s (taille : %s)' % (unicode(filename), sizeof_fmt(float(file_size)))
+#    file_size = int(meta.getheaders('Content-Length')[0])
+#    print(u'\rTéléchargement de %s (taille : %s)' % (filename, sizeof_fmt(float(file_size))))
 
     file_size_dl = 0
     block_sz = 8192
@@ -42,9 +44,9 @@ def download_file(url, filename):
             break
         file_size_dl += len(buffer)
         f.write(buffer)
-        status = '\t%3.1fMo  [%2d%%]' % (file_size_dl / (1024.**2), int(file_size_dl * 100. / file_size))
-        status = status + chr(8) * (len(status) + 1)
-        print status,
+        #status = '\t%3.1fMo  [%2d%%]' % (file_size_dl / (1024.**2), int(file_size_dl * 100. / file_size))
+        #status = status + chr(8) * (len(status) + 1)
+        #print(status,)
     f.close()
 
 
@@ -109,7 +111,7 @@ mois_end = args.fin
 mega_config = args.mega_config
 
 if mois_start > mois_end:
-    print u'Les mois ne sont pas cohérents...'
+    print(u'Les mois ne sont pas cohérents...')
     exit(1)
 else:
     a_start, m_start = int(mois_start[:4]), int(mois_start[-2:])
@@ -168,15 +170,15 @@ for emission_data in data:
                 title = title,
             )
 
-            print titre
-            if isfile(download_folder + filename.encode('utf-8')):
-                print u'\rLe fichier ' + filename + u' existe déjà.'
+            print(titre)
+            if isfile(download_folder + filename):
+                print(u'\rLe fichier ' + filename + u' existe déjà.')
             elif lien_mp3 is None:
-                print u'\rPas d\'emission ce jour.'
+                print(u'\rPas d\'emission ce jour.')
             else:
                 download_file(lien_mp3.replace('https:', 'http:'), download_folder + filename)
 
-                audio = MP3(download_folder + filename.encode('utf-8'))
+                audio = MP3(download_folder + filename)
                 audio['TIT2'] = TIT2(encoding=3, text=[title])
                 audio['TPE1'] = TPE1(encoding=3, text=u'Jean-Claude Ameisen')
                 audio['TALB'] = TALB(encoding=3, text=u'Sur les épaules de Darwin')
@@ -188,8 +190,8 @@ for emission_data in data:
                 subprocess.call(
                     ['megacmd', '-conf', mega_config, 'put', download_folder + filename, 'mega:/darwin/']
                 )
-                print u'\nEmission envoyée sur Mega'
+                print(u'\nEmission envoyée sur Mega')
 
             cpt += 1
 
-print u'\n', cpt, u'émissions téléchargées dans', download_folder
+print(u'\n', cpt, u'émissions téléchargées dans', download_folder)

@@ -19,7 +19,7 @@ import argparse
 import dateparser
 from pyquery import PyQuery as pq
 
-sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
+
 
 #####################################################################
 
@@ -38,7 +38,7 @@ sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
 
 def getMonths(mois_start, mois_end):
     if mois_start > mois_end:
-        print u'Les mois ne sont pas cohérents...'
+        print (u'Les mois ne sont pas cohérents...')
         exit(1)
     else:
         a_start, m_start = int(mois_start[:4]), int(mois_start[-2:])
@@ -84,7 +84,7 @@ def extractData(data, d):
         # jour, mois, annee = match.group(1), match.group(2), match.group(3)
         jour, mois, annee = str(date.day).zfill(2), str(date.month).zfill(2), str(date.year).zfill(4)
 
-        print jour, mois, annee, '-', title
+        print(jour, mois, annee, '-', title)
 
         if annee + '-' + mois in mois_list:
 
@@ -100,9 +100,9 @@ def extractData(data, d):
             if force or emission_hash not in hash_list:
 
                 emission_link = pq(bb).find('a.card-text-sub').attr('href')
-		if emission_link[0] == '/':
-                    emission_link = 'https://www.franceinter.fr' + emission_link
-                print emission_link
+                if emission_link[0] == '/':
+                   emission_link = 'https://www.franceinter.fr' + emission_link
+                print(emission_link)
                 emission_data['lien_emission'] = emission_link
 
                 player_link = emission_link
@@ -121,17 +121,17 @@ def extractData(data, d):
                 if emission_hash in hash_list:
                     index = [data.index(e) for e in data if e['hash'] == emission_hash][0]
                     data[index] = {'hash': emission_hash, 'infos': emission_data}
-                    print u'Emission mise à jour.'
+                    print(u'Emission mise à jour.')
                 else:
                     data.append({'hash': emission_hash, 'infos': emission_data})
-                    print u'Emission ajoutée.'
+                    print(u'Emission ajoutée.')
                 titles_list.append(title)
 
             else:
-                print u'Emission déjà dans la base !'
+                print(u'Emission déjà dans la base !')
 
         else:
-            print u'Pas dans l\'intervalle !'
+            print(u'Pas dans l\'intervalle !')
             pass
 
     return data
@@ -158,7 +158,7 @@ parser.add_argument(
     '-fin',
     metavar = 'mois_fin',
     help    = 'Le mois de fin au format YYYY-MM. Exemple : "2013-02"',
-    default = '2014-08'
+    default = '2020-11'
 )
 parser.add_argument(
     '-dest',
@@ -186,7 +186,9 @@ force       = args.force
 all_pages   = args.all
 
 emission_url = 'https://www.' + radio_nom + '.fr/emissions/' + emission_id
-print emission_url
+print(emission_id)
+print(radio_nom)
+print(emission_url)
 
 mois_list = getMonths(mois_start, mois_end)
 # print mois_list
@@ -210,10 +212,10 @@ d = pq(url=emission_url)
 if all_pages:
     url_last_page = d('.pager-item.last a').attr('href')
     nb_pages      = int(re.search(r'p=([0-9]+)', url_last_page).group(1))
-    print '{} pages trouves'.format(nb_pages)
+    print('{} pages trouves'.format(nb_pages))
     for p in range(1, nb_pages + 1):
         url = emission_url + '?p=' + str(p)
-        print 'Chargement de la page : ' + url
+        print('Chargement de la page : ' + url)
         new_data = extractData(data, pq(url=url))
 else:
     new_data = extractData(data, d)
@@ -223,10 +225,12 @@ data.sort(key=lambda e: e['hash'])
 data_v2 = {'emissions': data}
 # data_v2 = {'emissions':[{'hash': emission_hash, 'infos': data[emission_hash]} for emission_hash in data]}
 
-output_json = open(json_file, 'wb')
+output_json = open(json_file, 'w', encoding="utf8")
 json_str = json.dumps(data_v2, indent=4, separators=(',', ': '), sort_keys=True)
+
+
 output_json.write(json_str)
 output_json.close()
 
-print '\n' + str(len(data)) + u' émissions.'
-print u'Base de données exportée : ' + json_file
+print('\n' + str(len(data)) + u' émissions.')
+print(u'Base de données exportée : ' + json_file)
